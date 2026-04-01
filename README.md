@@ -1,6 +1,6 @@
 # Survey Response Rate Explorer
 
-Response rate isn't one problem. It's four.
+You need enough responses to trust your data. Turns out, whether you get them depends on more than just sending a survey and hoping for the best — which, to be fair, is the default strategy for a lot of programs. Sending to the right people, at the right time, with the right ask, and the right questions. Fix the wrong one and you've optimized a thing that wasn't broken. This tool helps you figure out which one is actually the problem.
 
 This tool breaks down what's actually driving (or tanking) your survey response rate across four pillars: right people, right time, right messaging, right questions. Pick your channel, enter your numbers, and walk through what your program is doing well and what it isn't.
 
