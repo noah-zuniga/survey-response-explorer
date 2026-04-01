@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Survey Response Rate Explorer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --color-people:    #3B82F6;
+    --color-time:      #14B8A6;
+    --color-messaging: #F97316;
+    --color-questions: #8B5CF6;
+    --color-hub:       #00889a;
+    --color-bg:        #F0F4F8;
+    --color-surface:   #FFFFFF;
+    --color-text:      #0F172A;
+    --color-muted:     #64748B;
+    --color-green:     #22C55E;
+    --color-amber:     #F59E0B;
+    --color-red:       #EF4444;
+    --color-border:    #E2E8F0;
+    --radius-card:     16px;
+    --shadow-card:     0 2px 12px rgba(0,0,0,0.08);
+    --shadow-hover:    0 8px 28px rgba(0,0,0,0.14);
+    --transition:      0.25s ease;
+  }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── PAGE HEADER ──────────────────────────────── */
+  .page-header {
+    text-align: center;
+    padding: 32px 24px 16px;
+  }
+  .page-header h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-text);
+  }
+  .page-header p {
+    margin-top: 6px;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+  }
+
+  /* ── INPUT BAR ────────────────────────────────── */
+  .input-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px 24px;
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    margin: 0 auto 24px;
+    max-width: 900px;
+    width: calc(100% - 48px);
+  }
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 140px;
+  }
+  .input-group label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-muted);
+  }
+  .input-group input[type="number"],
+  .input-group select {
+    padding: 10px 14px;
+    border: 1.5px solid var(--color-border);
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--color-text);
+    background: #F8FAFC;
+    width: 100%;
+    transition: border-color var(--transition);
+    font-family: inherit;
+  }
+  .input-group input[type="number"] {
+    -moz-appearance: textfield;
+  }
+  .input-group input[type="number"]::-webkit-outer-spin-button,
+  .input-group input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .input-group input[type="number"]:focus,
+  .input-group select:focus {
+    outline: none;
+    border-color: var(--color-hub);
+    background: #fff;
+  }
+  .input-group select { cursor: pointer; }
+  .input-warning {
+    font-size: 0.68rem;
+    color: var(--color-red);
+    font-weight: 600;
+    display: none;
+  }
+  .input-warning.is-visible { display: block; }
+  .input-divider {
+    width: 1px;
+    height: 48px;
+    background: var(--color-border);
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .input-results {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    align-items: flex-start;
+  }
+  .result-chip {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .result-chip__label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-muted);
+  }
+  .result-chip__value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text);
+    transition: color var(--transition);
+  }
+  .result-chip__sublabel {
+    font-size: 0.63rem;
+    color: var(--color-muted);
+    font-weight: 500;
+  }
+  .result-chip__value.is-green { color: var(--color-green); }
+  .result-chip__value.is-amber { color: var(--color-amber); }
+  .result-chip__value.is-red   { color: var(--color-red); }
+  .result-chip__value.is-hub   { color: var(--color-hub); }
+
+  /* ── MAIN DIAGRAM AREA ────────────────────────── */
+  .diagram-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 24px 24px;
+  }
+
+  .hub-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .connectors {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .connector-line {
+    stroke-width: 2;
+    stroke-dasharray: 7 5;
+    opacity: 0.45;
+    transition: stroke-width 0.2s, opacity 0.2s;
+  }
+  .connector-line.is-active {
+    stroke-width: 3;
+    stroke-dasharray: none;
+    opacity: 0.9;
+  }
+
+  .hub-layout {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 20px;
+    align-items: center;
+    justify-items: center;
+    padding: 16px 0;
+    position: relative;
+  }
+
+  /* ── PILLAR CARDS ─────────────────────────────── */
+  .pillar-card {
+    position: relative;
+    width: 148px;
+    height: 148px;
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    border: 2px solid var(--color-border);
+    border-top: 4px solid var(--pillar-color, #ccc);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+    text-align: center;
+    font-family: inherit;
+    color: inherit;
+  }
+  .pillar-card:hover { transform: translateY(-4px) scale(1.03); box-shadow: var(--shadow-hover); }
+  .pillar-card:focus-visible { outline: 3px solid var(--pillar-color, #ccc); outline-offset: 3px; }
+  .pillar-card.is-active { transform: translateY(-6px) scale(1.05); box-shadow: var(--shadow-hover); border-top-width: 5px; }
+  .pillar-card.score-green { border-bottom: 3px solid var(--color-green); }
+  .pillar-card.score-amber { border-bottom: 3px solid var(--color-amber); }
+  .pillar-card.score-red   { border-bottom: 3px solid var(--color-red); }
+
+  .pillar--people    { --pillar-color: var(--color-people);    grid-column: 2; grid-row: 1; }
+  .pillar--time      { --pillar-color: var(--color-time);      grid-column: 3; grid-row: 2; }
+  .pillar--messaging { --pillar-color: var(--color-messaging); grid-column: 2; grid-row: 3; }
+  .pillar--questions { --pillar-color: var(--color-questions); grid-column: 1; grid-row: 2; }
+
+  .pillar-card__icon  { font-size: 1.8rem; line-height: 1; }
+  .pillar-card__label { font-size: 0.82rem; font-weight: 700; color: var(--color-text); line-height: 1.2; }
+  .pillar-card__score {
+    font-size: 0.68rem; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+    background: #F1F5F9; color: var(--color-muted);
+    transition: background var(--transition), color var(--transition);
+  }
+  .pillar-card__score.score-green { background: #DCFCE7; color: #15803D; }
+  .pillar-card__score.score-amber { background: #FEF3C7; color: #92400E; }
+  .pillar-card__score.score-red   { background: #FEE2E2; color: #991B1B; }
+  .pillar-card__hint { font-size: 0.62rem; color: var(--color-muted); }
+
+  /* ── HUB CENTER ───────────────────────────────── */
+  .hub-center {
+    grid-column: 2; grid-row: 2;
+    width: 148px; height: 148px;
+    border-radius: 50%;
+    position: relative;
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+  }
+  .hub-ring-track { position: absolute; inset: -6px; border-radius: 50%; background: #E2E8F0; }
+  .hub-ring-fill {
+    position: absolute; inset: -6px; border-radius: 50%;
+    background: conic-gradient(var(--ring-color, #00889a) 0% var(--ring-pct, 0%), transparent var(--ring-pct, 0%) 100%);
+    transition: background 0.6s ease;
+  }
+  .hub-ring-inner {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: var(--color-surface);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.1);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    z-index: 1;
+  }
+  .hub-stat { font-size: 1.5rem; font-weight: 800; color: var(--color-text); line-height: 1; transition: color var(--transition); }
+  .hub-stat.is-green { color: var(--color-green); }
+  .hub-stat.is-amber { color: var(--color-amber); }
+  .hub-stat.is-red   { color: var(--color-red); }
+  .hub-stat.is-empty { color: #CBD5E1; }
+  .hub-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--color-muted); }
+  .hub-potential { font-size: 0.55rem; color: var(--color-green); font-weight: 600; letter-spacing: 0.02em; }
+
+  /* ── START / GUIDED NAV ───────────────────────── */
+  .start-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px auto 0;
+    padding: 10px 22px;
+    background: var(--color-hub);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background var(--transition), transform var(--transition), opacity var(--transition);
+  }
+  .start-btn:hover { background: #006b7a; transform: translateY(-1px); }
+  .start-btn.is-hidden { display: none; }
+
+  .guided-nav {
+    display: none;
+    width: 100%;
+    max-width: 640px;
+    margin: 14px 0 0;
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 14px 20px;
+    align-items: center;
+    gap: 14px;
+  }
+  .guided-nav.is-active { display: flex; }
+  .guided-nav__center { flex: 1; text-align: center; min-width: 0; }
+  .guided-nav__step { font-size: 0.85rem; font-weight: 700; color: var(--color-text); }
+  .guided-nav__sub { font-size: 0.72rem; color: var(--color-muted); margin-top: 2px; }
+  .guided-nav__dots { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
+  .guided-nav__dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--color-border);
+    transition: background var(--transition);
+  }
+  .guided-nav__dot.is-active { background: var(--color-hub); }
+  .guided-nav__dot.is-done   { background: var(--color-green); }
+  .guided-nav__btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid var(--color-border);
+    background: #F8FAFC;
+    color: var(--color-text);
+    font-family: inherit;
+    transition: all var(--transition);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .guided-nav__btn:hover:not(:disabled) { background: var(--color-text); color: #fff; border-color: var(--color-text); }
+  .guided-nav__btn:disabled { opacity: 0.3; cursor: default; }
+  .guided-nav__btn--primary { background: var(--color-hub); color: #fff; border-color: var(--color-hub); }
+  .guided-nav__btn--primary:hover:not(:disabled) { background: #006b7a; border-color: #006b7a; color: #fff; }
+
+  /* ── DETAIL PANEL ─────────────────────────────── */
+  .detail-panel {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    width: 100%;
+    max-width: 640px;
+    margin-top: 12px;
+  }
+  .detail-panel.is-open { max-height: 2400px; opacity: 1; }
+  .detail-panel__inner {
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    border-top: 4px solid var(--panel-color, #ccc);
+    padding: 20px 24px 24px;
+  }
+  .detail-panel__header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  }
+  .detail-panel__icon { font-size: 1.4rem; }
+  .detail-panel__title { font-size: 1rem; font-weight: 700; flex: 1; }
+  .detail-panel__summary { font-size: 0.75rem; color: var(--color-muted); font-weight: 500; }
+  .detail-panel__close {
+    background: none; border: none; cursor: pointer;
+    font-size: 1rem; color: var(--color-muted);
+    padding: 4px 8px; border-radius: 6px;
+    transition: background var(--transition), color var(--transition);
+    font-family: inherit;
+  }
+  .detail-panel__close:hover { background: #F1F5F9; color: var(--color-text); }
+
+  /* ── FACTOR LIST ─────────────────────────────── */
+  .factor-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .factor-item {
+    animation: fadeSlideUp 0.3s ease both;
+    animation-delay: calc(var(--i, 0) * 55ms);
+  }
+
+  .factor-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #F8FAFC;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    transition: border-color var(--transition), background var(--transition);
+  }
+  .factor-row.is-on { background: #F0FDF4; border-color: #86EFAC; }
+
+  .factor-tip {
+    font-size: 0.74rem;
+    color: #1E40AF;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    padding: 8px 12px 8px 14px;
+    border-radius: 0 0 8px 8px;
+    line-height: 1.5;
+    display: none;
+  }
+  .factor-tip.is-visible { display: block; }
+
+  /* Toggle switch */
+  .toggle-wrap { flex-shrink: 0; }
+  .toggle-wrap input[type="checkbox"] { display: none; }
+  .toggle-switch {
+    display: block; width: 38px; height: 22px;
+    border-radius: 999px; background: #CBD5E1;
+    position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle-switch::after {
+    content: ''; position: absolute;
+    width: 16px; height: 16px; border-radius: 50%; background: #fff;
+    top: 3px; left: 3px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .toggle-wrap input:checked + .toggle-switch { background: var(--panel-color, #00889a); }
+  .toggle-wrap input:checked + .toggle-switch::after { transform: translateX(16px); }
+
+  .factor-info { flex: 1; min-width: 0; }
+  .factor-name { font-size: 0.82rem; font-weight: 600; color: var(--color-text); line-height: 1.3; }
+  .factor-hint { font-size: 0.7rem; color: var(--color-muted); margin-top: 1px; }
+
+  .impact-badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 9px; border-radius: 999px;
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; white-space: nowrap;
+    border: 1.5px solid; flex-shrink: 0;
+  }
+  .impact-badge--high   { background: #FEF3C7; color: #92400E; border-color: #D97706; }
+  .impact-badge--medium { background: #EDE9FE; color: #5B21B6; border-color: #7C3AED; }
+
+  /* ── PANEL FOOTER ─────────────────────────────── */
+  .panel-footer {
+    margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 8px;
+  }
+  .panel-footer__score { font-size: 0.78rem; font-weight: 600; color: var(--color-muted); }
+  .panel-footer__score span { color: var(--color-text); font-weight: 700; }
+  .panel-footer__uplift {
+    font-size: 0.75rem; font-weight: 600;
+    color: var(--color-green); background: #DCFCE7;
+    padding: 4px 10px; border-radius: 999px;
+  }
+
+  /* ── SUMMARY SECTION ──────────────────────────── */
+  .summary-section {
+    max-height: 0; overflow: hidden; opacity: 0;
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+    width: 100%; max-width: 640px; margin-top: 12px;
+  }
+  .summary-section.is-open { max-height: 3000px; opacity: 1; }
+  .summary-inner {
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    border-top: 4px solid var(--color-hub);
+    padding: 22px 24px 24px;
+  }
+  .summary-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+  }
+  .summary-header h2 { font-size: 1rem; font-weight: 700; }
+  .summary-close-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 1rem; color: var(--color-muted);
+    padding: 4px 8px; border-radius: 6px; font-family: inherit;
+    transition: background var(--transition);
+  }
+  .summary-close-btn:hover { background: #F1F5F9; }
+  .summary-rates {
+    display: flex; gap: 28px; margin-bottom: 20px;
+    padding: 14px 16px; background: #F8FAFC; border-radius: 10px;
+  }
+  .summary-rate-item { display: flex; flex-direction: column; gap: 2px; }
+  .summary-rate-label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-muted); }
+  .summary-rate-value { font-size: 1.4rem; font-weight: 800; color: var(--color-text); }
+  .summary-rate-value.is-green { color: var(--color-green); }
+  .summary-rate-value.is-amber { color: var(--color-amber); }
+  .summary-rate-value.is-red   { color: var(--color-red); }
+  .summary-section-title {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--color-muted);
+    margin-bottom: 10px; margin-top: 16px;
+  }
+  .action-items { display: flex; flex-direction: column; gap: 8px; }
+  .action-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 14px; border-radius: 10px;
+    background: #F8FAFC; border: 1.5px solid var(--color-border);
+  }
+  .action-item--high   { background: #FFFBEB; border-color: #FCD34D; }
+  .action-item--medium { background: #F5F3FF; border-color: #C4B5FD; }
+  .action-item__icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.4; }
+  .action-item__content { flex: 1; min-width: 0; }
+  .action-item__name { font-size: 0.82rem; font-weight: 600; color: var(--color-text); line-height: 1.3; }
+  .action-item__tip { font-size: 0.74rem; color: var(--color-muted); margin-top: 3px; line-height: 1.4; }
+  .action-item__badge {
+    font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 2px 8px; border-radius: 999px; flex-shrink: 0;
+  }
+  .action-item__badge--high   { background: #FEF3C7; color: #92400E; }
+  .action-item__badge--medium { background: #EDE9FE; color: #5B21B6; }
+  .summary-all-good {
+    text-align: center; padding: 32px 20px;
+    color: var(--color-green); font-weight: 700; font-size: 1rem;
+  }
+  .summary-reset-btn {
+    display: block; margin: 20px auto 0;
+    padding: 10px 24px;
+    background: #F1F5F9; color: var(--color-text);
+    border: 1.5px solid var(--color-border);
+    border-radius: 10px; font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: all var(--transition);
+  }
+  .summary-reset-btn:hover { background: var(--color-text); color: #fff; border-color: var(--color-text); }
+
+  /* ── PAGE FOOTER ──────────────────────────────── */
+  .page-footer {
+    text-align: center; padding: 16px 24px 24px;
+    font-size: 0.72rem; color: #94A3B8;
+  }
+
+  /* ── RESPONSIVE ───────────────────────────────── */
+  @media (max-width: 600px) {
+    .hub-layout { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .connectors { display: none; }
+    .pillar-card { width: 100%; max-width: 320px; height: auto; padding: 14px 20px; flex-direction: row; justify-content: flex-start; gap: 12px; }
+    .pillar-card__icon { font-size: 1.4rem; }
+    .hub-center { order: -1; }
+    .detail-panel, .summary-section { max-width: 100%; }
+    .input-bar { flex-direction: column; align-items: stretch; }
+    .input-divider { width: 100%; height: 1px; }
+    .input-results { justify-content: space-between; }
+    .guided-nav { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <h1>Survey Response Rate Explorer</h1>
+  <p>Select your channel, enter your numbers, then run the guided assessment or click any pillar to explore.</p>
+</header>
+
+<!-- INPUT BAR -->
+<div class="input-bar" role="region" aria-label="Survey inputs">
+  <div class="input-group">
+    <label for="input-channel">Channel</label>
+    <select id="input-channel">
+      <option value="email">Email</option>
+      <option value="sms">SMS</option>
+      <option value="web">Digital – Website Intercept</option>
+      <option value="inapp">Digital – In-App Prompt</option>
+      <option value="passive">Passive Feedback Button</option>
+    </select>
+  </div>
+  <div class="input-group">
+    <label for="input-sample">Sample Size</label>
+    <input type="number" id="input-sample" placeholder="e.g. 500" min="0" aria-label="Number of surveys sent" />
+  </div>
+  <div class="input-group">
+    <label for="input-responses">Responses Received</label>
+    <input type="number" id="input-responses" placeholder="e.g. 75" min="0" aria-label="Number of completed responses" />
+    <span class="input-warning" id="responses-warning">Cannot exceed sample size</span>
+  </div>
+  <div class="input-divider" aria-hidden="true"></div>
+  <div class="input-results">
+    <div class="result-chip">
+      <span class="result-chip__label">Response Rate</span>
+      <span class="result-chip__value" id="stat-rate">—</span>
+    </div>
+    <div class="result-chip">
+      <span class="result-chip__label">Channel Benchmark</span>
+      <span class="result-chip__value is-hub" id="stat-benchmark">5–15%</span>
+      <span class="result-chip__sublabel" id="stat-benchmark-strong">strong: 15%+</span>
+    </div>
+    <div class="result-chip">
+      <span class="result-chip__label">vs. Benchmark</span>
+      <span class="result-chip__value" id="stat-gap">—</span>
+    </div>
+    <div class="result-chip">
+      <span class="result-chip__label">Optimized Potential</span>
+      <span class="result-chip__value is-green" id="stat-potential">—</span>
+    </div>
+  </div>
+</div>
+
+<!-- DIAGRAM -->
+<main class="diagram-section">
+  <div class="hub-wrapper">
+    <svg class="connectors" id="svg-connectors" aria-hidden="true">
+      <line id="line-people"    class="connector-line" stroke="#3B82F6" />
+      <line id="line-time"      class="connector-line" stroke="#14B8A6" />
+      <line id="line-messaging" class="connector-line" stroke="#F97316" />
+      <line id="line-questions" class="connector-line" stroke="#8B5CF6" />
+    </svg>
+
+    <div class="hub-layout" id="hub-layout">
+
+      <!-- Top: Right People -->
+      <button class="pillar-card pillar--people" data-pillar="people" aria-expanded="false" aria-controls="detail-panel">
+        <span class="pillar-card__icon" aria-hidden="true">👥</span>
+        <span class="pillar-card__label">Right People</span>
+        <span class="pillar-card__score" id="score-people">0 / 5</span>
+        <span class="pillar-card__hint">Click to assess</span>
+      </button>
+
+      <!-- Center: Hub -->
+      <div class="hub-center" role="img" id="hub-center" aria-label="Response rate gauge">
+        <div class="hub-ring-track"></div>
+        <div class="hub-ring-fill" id="hub-ring"></div>
+        <div class="hub-ring-inner">
+          <span class="hub-stat is-empty" id="hub-stat">—</span>
+          <span class="hub-label">Response Rate</span>
+          <span class="hub-potential" id="hub-potential"></span>
+        </div>
+      </div>
+
+      <!-- Right: Right Time -->
+      <button class="pillar-card pillar--time" data-pillar="time" aria-expanded="false" aria-controls="detail-panel">
+        <span class="pillar-card__icon" aria-hidden="true">⏰</span>
+        <span class="pillar-card__label">Right Time</span>
+        <span class="pillar-card__score" id="score-time">0 / 5</span>
+        <span class="pillar-card__hint">Click to assess</span>
+      </button>
+
+      <!-- Left: Right Questions -->
+      <button class="pillar-card pillar--questions" data-pillar="questions" aria-expanded="false" aria-controls="detail-panel">
+        <span class="pillar-card__icon" aria-hidden="true">📋</span>
+        <span class="pillar-card__label">Right Questions</span>
+        <span class="pillar-card__score" id="score-questions">0 / 6</span>
+        <span class="pillar-card__hint">Click to assess</span>
+      </button>
+
+      <!-- Bottom: Right Messaging -->
+      <button class="pillar-card pillar--messaging" data-pillar="messaging" aria-expanded="false" aria-controls="detail-panel">
+        <span class="pillar-card__icon" aria-hidden="true">✉️</span>
+        <span class="pillar-card__label">Right Messaging</span>
+        <span class="pillar-card__score" id="score-messaging">0 / 6</span>
+        <span class="pillar-card__hint">Click to assess</span>
+      </button>
+
+    </div><!-- /.hub-layout -->
+  </div><!-- /.hub-wrapper -->
+
+  <!-- Start button -->
+  <button class="start-btn" id="start-btn">▶ Start Guided Assessment</button>
+
+  <!-- Guided Nav -->
+  <div class="guided-nav" id="guided-nav" aria-label="Guided assessment navigation">
+    <button class="guided-nav__btn" id="guided-back" disabled>← Back</button>
+    <div class="guided-nav__center">
+      <div class="guided-nav__step" id="guided-step-text"></div>
+      <div class="guided-nav__sub" id="guided-sub-text"></div>
+      <div class="guided-nav__dots" id="guided-dots"></div>
+    </div>
+    <button class="guided-nav__btn guided-nav__btn--primary" id="guided-next">Next →</button>
+  </div>
+
+  <!-- DETAIL PANEL -->
+  <div class="detail-panel" id="detail-panel" aria-live="polite" aria-atomic="true">
+    <div class="detail-panel__inner" id="panel-inner">
+      <div class="detail-panel__header">
+        <span class="detail-panel__icon" id="panel-icon"></span>
+        <h2 class="detail-panel__title" id="panel-title"></h2>
+        <span class="detail-panel__summary" id="panel-summary"></span>
+        <button class="detail-panel__close" id="panel-close" aria-label="Close detail panel">&#x2715;</button>
+      </div>
+      <ul class="factor-list" id="factor-list" role="list"></ul>
+      <div class="panel-footer">
+        <span class="panel-footer__score" id="panel-score"></span>
+        <span class="panel-footer__uplift" id="panel-uplift"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTION PLAN SUMMARY -->
+  <div class="summary-section" id="summary-section" aria-live="polite">
+    <div class="summary-inner">
+      <div class="summary-header">
+        <h2>Your Response Rate Action Plan</h2>
+        <button class="summary-close-btn" id="summary-close" aria-label="Close action plan">&#x2715;</button>
+      </div>
+      <div class="summary-rates">
+        <div class="summary-rate-item">
+          <span class="summary-rate-label">Current Rate</span>
+          <span class="summary-rate-value" id="summary-current-rate">—</span>
+        </div>
+        <div class="summary-rate-item">
+          <span class="summary-rate-label">Optimized Potential</span>
+          <span class="summary-rate-value is-green" id="summary-potential-rate">—</span>
+        </div>
+      </div>
+      <div id="summary-content"></div>
+      <button class="summary-reset-btn" id="summary-reset">↺ Reset Assessment</button>
+    </div>
+  </div>
+
+</main>
+
+<footer class="page-footer">
+  Impact weights are estimated based on survey methodology best practices. Benchmark ranges reflect published industry data; actual results vary by program design, audience, and context.
+</footer>
+
+<script>
+// ──────────────────────────────────────────────
+// CHANNEL DATA
+// ──────────────────────────────────────────────
+const CHANNELS = [
+  { id: 'email',   label: 'Email',                       conservativeLow: 5,   conservativeHigh: 15,  strong: 15,  benchmarkLabel: '5–15%',   strongLabel: '15%+' },
+  { id: 'sms',     label: 'SMS',                         conservativeLow: 10,  conservativeHigh: 25,  strong: 25,  benchmarkLabel: '10–25%',  strongLabel: '25%+' },
+  { id: 'web',     label: 'Digital – Website Intercept', conservativeLow: 0.5, conservativeHigh: 5,   strong: 5,   benchmarkLabel: '0.5–5%',  strongLabel: '5%+'  },
+  { id: 'inapp',   label: 'Digital – In-App Prompt',     conservativeLow: 8,   conservativeHigh: 20,  strong: 20,  benchmarkLabel: '8–20%',   strongLabel: '20%+' },
+  { id: 'passive', label: 'Passive Feedback Button',     conservativeLow: 0.1, conservativeHigh: 1,   strong: 1,   benchmarkLabel: '<1%',     strongLabel: '1%+'  },
+];
+
+// ──────────────────────────────────────────────
+// CHANNEL TIPS  (indexed by factor order in PILLARS)
+// ──────────────────────────────────────────────
+const CHANNEL_TIPS = {
+  email: {
+    people: [
+      "Use sample planning tied to audience size and target confidence level, with n ≥ 200 as a directional minimum where feasible.",
+      "Segment before send using role, tenure, relationship status, and recent interaction history.",
+      "Validate email addresses before deployment and suppress hard bounces, unsubscribes, and contacts inactive for 12+ months.",
+      "Maintain a cross-program contact policy so no respondent receives more than one survey invite within 90 days.",
+      "Target the person closest to the experience, not a downstream manager or proxy."
+    ],
+    time: [
+      "Send Tuesday through Thursday in the respondent's local timezone.",
+      "Prioritize delivery between 9:00–11:00 AM local time.",
+      "Send one reminder 3–5 days after the initial invite; reserve a second only for high-priority audiences to protect against fatigue.",
+      "For transactional use cases, deploy within 24–48 hours of the interaction.",
+      "Avoid Mondays, Fridays, major holidays, and end-of-quarter close periods."
+    ],
+    messaging: [
+      "Personalize the subject line with the respondent's first name and a specific event or interaction.",
+      "Use a recognizable sender name and verified domain.",
+      "Clearly reference the experience in the body of the invite, not just the subject line.",
+      "Lead with relevance and brevity: explain why the feedback matters and keep the ask lightweight.",
+      "Send one reminder 3–5 days after the initial invite; limit to two touches maximum.",
+      "State the estimated completion time up front, ideally in the subject line or first sentence."
+    ],
+    questions: [
+      "Keep transactional surveys to 5–7 questions whenever possible.",
+      "Test wording for ambiguity before launch and remove any question that can be interpreted more than one way.",
+      "Optimize for mobile readability, tap targets, and no horizontal scrolling.",
+      "Use consistent scale direction throughout the survey.",
+      "Start with the core metric, then capture open text, then any supporting attributes.",
+      "Avoid leading or double-barreled questions; use neutral language throughout."
+    ]
+  },
+  sms: {
+    people: [
+      "Reserve SMS for targeted, high-value moments — avoid overusing it for broad relationship programs.",
+      "Prioritize audiences with a recent, discrete interaction where speed and immediacy matter.",
+      "Use SMS only for contacts with clear consent and a valid mobile number.",
+      "Exclude contacts already invited through another channel within the suppression window.",
+      "Target the individual who directly experienced the moment, not a shared or corporate number."
+    ],
+    time: [
+      "Send close to the interaction, ideally within 24 hours — timing the event matters more than day of week for SMS.",
+      "Deliver during reasonable local daytime hours, typically mid-morning to early evening.",
+      "Keep cadence tighter than email, but protect against fatigue with strict cross-channel frequency controls.",
+      "Trigger immediately or within a few hours of the interaction — SMS response windows close faster than email.",
+      "Avoid early mornings, late evenings, weekends (unless the interaction occurred then), and holiday-adjacent periods."
+    ],
+    messaging: [
+      "Keep the message short, direct, and immediately recognizable from the first line.",
+      "Identify the brand in the first line.",
+      "Reference the specific event or interaction so the request feels legitimate and timely.",
+      "Set clear expectations: short survey, why it matters, and approximate completion time.",
+      "If sending a follow-up, wait at least 24 hours and send only one — SMS fatigue sets in faster than email.",
+      "Use a direct link and keep all copy minimal; state the expected time upfront (e.g., '1 question, 30 seconds')."
+    ],
+    questions: [
+      "Keep SMS-linked surveys extremely short; prioritize the minimum needed to answer the business question.",
+      "Limit open text unless it is high value and optional; ambiguous questions cause abandonment on mobile.",
+      "Design for mobile-first completion with minimal typing — use tappable scale choices.",
+      "Use a simple, consistent scale (e.g., 1–5); avoid mixing formats across questions.",
+      "Lead with the most important rating question immediately — don't bury the key metric.",
+      "Avoid complex grids, long matrix questions, or anything that creates friction on a phone."
+    ]
+  },
+  digital: {
+    people: [
+      "Trigger on meaningful experiences, not just page visits — set minimum engagement thresholds before showing the survey.",
+      "Target based on behavior, journey stage, product area, and recency of action.",
+      "Suppress users who have recently responded or recently dismissed an intercept.",
+      "Avoid showing the survey to users without enough context to provide useful feedback.",
+      "Align targeting to the person actually performing the task, action, or journey step being measured."
+    ],
+    time: [
+      "For website intercepts, avoid firing too early — allow enough time for the user to engage with the page first.",
+      "Match display timing to when users actively complete tasks; avoid idle or transition states.",
+      "Throttle exposure so users are not repeatedly interrupted across sessions.",
+      "Trigger as close to the moment of truth as possible; for in-app, deploy immediately after task or milestone completion.",
+      "Suppress during known high-friction moments where the survey would compete with task completion."
+    ],
+    messaging: [
+      "Use concise CTA language and avoid generic asks like 'Take our survey' — be specific about what you're asking about.",
+      "Match the tone and visual style of the product or site so the prompt feels native and trusted.",
+      "Make the invite contextual: reference the page, task, product area, or action just completed.",
+      "Keep the value proposition simple and visible within the prompt itself.",
+      "Ensure the intercept is dismissible with a clear close option to maintain trust and avoid friction.",
+      "Be transparent about effort: '1–2 minutes' or equivalent — and deliver on that promise."
+    ],
+    questions: [
+      "Keep digital intercepts shorter than email surveys — the modal/overlay context demands brevity.",
+      "Prioritize one core metric and one or two diagnostic questions; avoid anything that feels like a full survey.",
+      "Ensure the survey renders cleanly across browser and device types — test on Chrome, Safari, and mobile.",
+      "Use consistent scale direction and validate that all interactive elements work on touch-only devices.",
+      "Use progressive disclosure only if more detail is truly needed; lead with the most important question first.",
+      "Eliminate anything that interrupts flow unnecessarily, especially long open-text asks early in the survey."
+    ]
+  }
+};
+
+// digital tips apply to web, inapp, and passive channels
+['web', 'inapp', 'passive'].forEach(id => { CHANNEL_TIPS[id] = CHANNEL_TIPS.digital; });
+
+// ──────────────────────────────────────────────
+// PILLARS DATA  (Right Questions sorted High→Medium)
+// ──────────────────────────────────────────────
+const PILLARS = [
+  {
+    id: 'people', label: 'Right People', icon: '👥', color: '#3B82F6',
+    description: 'Are you reaching the right respondents?',
+    factors: [
+      { name: 'Sample size & representativeness',      hint: 'Large enough sample to capture meaningful variation',          impact: 'high',   lift: 8 },
+      { name: 'Audience segmentation / targeting',     hint: 'Sending only to relevant, qualified respondents',             impact: 'high',   lift: 8 },
+      { name: 'Contact list hygiene',                  hint: 'Removing invalid emails, duplicates, and inactive contacts',  impact: 'high',   lift: 8 },
+      { name: 'Opt-out / suppression logic',           hint: 'Honoring unsubscribes and survey fatigue rules',              impact: 'medium', lift: 4 },
+      { name: 'Role-appropriate targeting',            hint: 'Reaching the actual decision-maker or experience owner',      impact: 'medium', lift: 4 },
+    ]
+  },
+  {
+    id: 'time', label: 'Right Time', icon: '⏰', color: '#14B8A6',
+    description: 'Are you sending at the right moment?',
+    factors: [
+      { name: 'Day of week (Tue–Thu optimal)',              hint: 'Midweek sends typically outperform Monday/Friday',            impact: 'high',   lift: 8 },
+      { name: 'Time of day (late morning)',                 hint: '9–11 AM local time typically yields highest open rates',      impact: 'high',   lift: 8 },
+      { name: 'Survey recency / fatigue avoidance',         hint: 'Not surveying the same person too frequently',               impact: 'high',   lift: 8 },
+      { name: 'Event proximity (24–48 hrs post-interaction)', hint: 'Transactional surveys sent while experience is fresh',     impact: 'high',   lift: 8 },
+      { name: 'Avoiding high-traffic / holiday periods',   hint: 'Steering clear of end-of-quarter, major holidays',           impact: 'medium', lift: 4 },
+    ]
+  },
+  {
+    id: 'messaging', label: 'Right Messaging', icon: '✉️', color: '#F97316',
+    description: 'Does your outreach compel action?',
+    factors: [
+      { name: 'Subject line & open rate hook',         hint: 'A clear, personal subject line dramatically lifts opens',      impact: 'high',   lift: 8 },
+      { name: 'Sender credibility (from address)',     hint: 'A recognized sender name increases trust and opens',           impact: 'high',   lift: 8 },
+      { name: 'Personalization of outreach',           hint: 'Using the respondent\'s name and specific context',           impact: 'high',   lift: 8 },
+      { name: 'Clear value proposition',               hint: '"Why should I respond?" must be answered immediately',         impact: 'high',   lift: 8 },
+      { name: 'Reminder cadence',                      hint: '1–2 well-timed reminders can recover 15–25% of responses',    impact: 'medium', lift: 4 },
+      { name: 'Setting length expectations upfront',   hint: '"This takes 2 minutes" reduces abandonment significantly',    impact: 'medium', lift: 4 },
+    ]
+  },
+  {
+    id: 'questions', label: 'Right Questions', icon: '📋', color: '#8B5CF6',
+    description: 'Is the survey itself easy to complete?',
+    factors: [
+      { name: 'Survey length (brevity = completion)',       hint: 'Every extra question reduces completion rate by ~5–7%',     impact: 'high',   lift: 8 },
+      { name: 'Question clarity and relevance',            hint: 'Ambiguous questions increase dropout and bad data',          impact: 'high',   lift: 8 },
+      { name: 'Mobile optimization',                       hint: 'Over 60% of surveys are opened on mobile devices',          impact: 'high',   lift: 8 },
+      { name: 'Consistent rating scales',                  hint: 'Mixing scale directions confuses respondents',               impact: 'medium', lift: 4 },
+      { name: 'Logical question order / flow',             hint: 'Questions should flow from general to specific',             impact: 'medium', lift: 4 },
+      { name: 'Avoiding leading or double-barreled questions', hint: 'These reduce trust and inflate / skew responses',       impact: 'medium', lift: 4 },
+    ]
+  }
+];
+
+const RATE_CAP = 85;
+
+// ──────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────
+const state = {
+  sampleSize: 0,
+  responses: 0,
+  channel: 'email',
+  activePillar: null,
+  guidedMode: false,
+  guidedStep: 0,
+  summaryOpen: false,
+  toggles: {
+    people:    [false, false, false, false, false],
+    time:      [false, false, false, false, false],
+    messaging: [false, false, false, false, false, false],
+    questions: [false, false, false, false, false, false],
+  }
+};
+
+// ──────────────────────────────────────────────
+// HELPERS
+// ──────────────────────────────────────────────
+function currentChannel() {
+  return CHANNELS.find(c => c.id === state.channel) || CHANNELS[0];
+}
+
+function getTips(pillarId) {
+  return (CHANNEL_TIPS[state.channel] || CHANNEL_TIPS.email)[pillarId] || [];
+}
+
+function calcRate() {
+  if (!state.sampleSize || state.sampleSize <= 0) return null;
+  return Math.min(100, (state.responses / state.sampleSize) * 100);
+}
+
+function calcPotential(actualRate) {
+  if (actualRate === null) return null;
+  let uplift = 0;
+  PILLARS.forEach(p => p.factors.forEach((f, i) => { if (!state.toggles[p.id][i]) uplift += f.lift; }));
+  const maxUplift = PILLARS.reduce((s, p) => s + p.factors.reduce((fs, f) => fs + f.lift, 0), 0);
+  const scaledUplift = (uplift / maxUplift) * 45;
+  return Math.min(RATE_CAP, actualRate + scaledUplift);
+}
+
+function scoreColor(on, total) {
+  const r = on / total;
+  if (r >= 0.8) return 'green';
+  if (r >= 0.4) return 'amber';
+  return 'red';
+}
+
+function rateColorClass(rate) {
+  if (rate === null) return 'is-empty';
+  const ch = currentChannel();
+  if (rate >= ch.strong) return 'is-green';
+  if (rate >= ch.conservativeLow) return 'is-amber';
+  return 'is-red';
+}
+
+function rateRingColor(rate) {
+  if (rate === null) return '#CBD5E1';
+  const ch = currentChannel();
+  if (rate >= ch.strong) return '#22C55E';
+  if (rate >= ch.conservativeLow) return '#F59E0B';
+  return '#EF4444';
+}
+
+// ──────────────────────────────────────────────
+// RENDER
+// ──────────────────────────────────────────────
+function render() {
+  const rate      = calcRate();
+  const potential = calcPotential(rate);
+  const ch        = currentChannel();
+
+  // Benchmark chip
+  document.getElementById('stat-benchmark').textContent       = ch.benchmarkLabel;
+  document.getElementById('stat-benchmark-strong').textContent = 'strong: ' + ch.strongLabel;
+
+  // Rate + gap + potential
+  const rateEl = document.getElementById('stat-rate');
+  const gapEl  = document.getElementById('stat-gap');
+  const potEl  = document.getElementById('stat-potential');
+
+  if (rate !== null) {
+    rateEl.textContent = rate.toFixed(1) + '%';
+    rateEl.className   = 'result-chip__value ' + rateColorClass(rate);
+    const gap = rate - ch.strong;
+    gapEl.textContent = (gap >= 0 ? '+' : '') + gap.toFixed(1) + ' pts';
+    gapEl.className   = 'result-chip__value ' + (gap >= 0 ? 'is-green' : 'is-red');
+    potEl.textContent = potential !== null ? '~' + potential.toFixed(0) + '%' : '—';
+  } else {
+    rateEl.textContent = '—'; rateEl.className = 'result-chip__value';
+    gapEl.textContent  = '—'; gapEl.className  = 'result-chip__value';
+    potEl.textContent  = '—';
+  }
+
+  // Hub gauge
+  const hubStat = document.getElementById('hub-stat');
+  const hubRing = document.getElementById('hub-ring');
+  const hubPot  = document.getElementById('hub-potential');
+  const pct = rate !== null ? Math.min(100, rate).toFixed(1) : 0;
+
+  hubStat.textContent = rate !== null ? pct + '%' : '—';
+  hubStat.className   = 'hub-stat ' + rateColorClass(rate);
+  hubRing.style.background = `conic-gradient(${rateRingColor(rate)} 0% ${pct}%, transparent ${pct}% 100%)`;
+
+  if (potential !== null && rate !== null && potential > rate + 0.5) {
+    hubPot.textContent = '↑ ' + potential.toFixed(0) + '% possible';
+  } else {
+    hubPot.textContent = '';
+  }
+
+  // Pillar card scores
+  PILLARS.forEach(p => {
+    const toggles = state.toggles[p.id];
+    const on    = toggles.filter(Boolean).length;
+    const total = toggles.length;
+    const col   = scoreColor(on, total);
+    const scoreEl = document.getElementById('score-' + p.id);
+    scoreEl.textContent = on + ' / ' + total + ' optimized';
+    scoreEl.className   = 'pillar-card__score score-' + col;
+    const card = document.querySelector('[data-pillar="' + p.id + '"]');
+    card.classList.remove('score-green', 'score-amber', 'score-red');
+    if (on > 0) card.classList.add('score-' + col);
+  });
+
+  // Panel footer
+  if (state.activePillar) updatePanelFooter(state.activePillar, potential);
+
+  // Summary
+  if (state.summaryOpen) renderSummaryContent();
+}
+
+function updatePanelFooter(pillar, potential) {
+  const toggles = state.toggles[pillar.id];
+  const on    = toggles.filter(Boolean).length;
+  const total = toggles.length;
+  const uncheckedLift = pillar.factors.reduce((s, f, i) => s + (toggles[i] ? 0 : f.lift), 0);
+  const maxUplift     = PILLARS.reduce((s, p) => s + p.factors.reduce((fs, f) => fs + f.lift, 0), 0);
+  const scaledUplift  = (uncheckedLift / maxUplift) * 45;
+  const upliftEl      = document.getElementById('panel-uplift');
+
+  document.getElementById('panel-score').innerHTML =
+    '<span>' + on + ' of ' + total + '</span> factors optimized for this pillar';
+
+  if (scaledUplift > 0.5) {
+    upliftEl.textContent       = '↑ ~' + scaledUplift.toFixed(0) + '% potential lift if fully optimized';
+    upliftEl.style.background  = '';
+    upliftEl.style.color       = '';
+  } else {
+    upliftEl.textContent       = '✓ Fully optimized!';
+    upliftEl.style.background  = '#DCFCE7';
+    upliftEl.style.color       = '#15803D';
+  }
+}
+
+// ──────────────────────────────────────────────
+// DETAIL PANEL
+// ──────────────────────────────────────────────
+function openPanel(pillar) {
+  state.activePillar = pillar;
+
+  const panelInner = document.getElementById('panel-inner');
+  panelInner.style.setProperty('--panel-color', pillar.color);
+  document.getElementById('panel-icon').textContent    = pillar.icon;
+  document.getElementById('panel-title').textContent   = pillar.label;
+  document.getElementById('panel-summary').textContent = pillar.description;
+
+  const listEl = document.getElementById('factor-list');
+  const tips   = getTips(pillar.id);
+  listEl.innerHTML = '';
+
+  pillar.factors.forEach((f, i) => {
+    const checked  = state.toggles[pillar.id][i];
+    const tip      = tips[i] || '';
+    const toggleId = 'toggle-' + pillar.id + '-' + i;
+
+    const li = document.createElement('li');
+    li.className = 'factor-item';
+    li.style.setProperty('--i', i);
+
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'factor-row' + (checked ? ' is-on' : '');
+    rowDiv.innerHTML = `
+      <div class="toggle-wrap">
+        <input type="checkbox" id="${toggleId}" ${checked ? 'checked' : ''} data-pillar="${pillar.id}" data-idx="${i}" />
+        <label class="toggle-switch" for="${toggleId}" aria-label="Toggle: ${f.name}"></label>
+      </div>
+      <div class="factor-info">
+        <div class="factor-name">${f.name}</div>
+        <div class="factor-hint">${f.hint}</div>
+      </div>
+      <span class="impact-badge impact-badge--${f.impact}">${f.impact === 'high' ? 'High' : 'Medium'} Impact</span>
+    `;
+    li.appendChild(rowDiv);
+
+    if (tip) {
+      const tipEl = document.createElement('div');
+      tipEl.className = 'factor-tip' + (!checked ? ' is-visible' : '');
+      tipEl.id        = 'tip-' + pillar.id + '-' + i;
+      tipEl.textContent = '💡 ' + tip;
+      li.appendChild(tipEl);
+    }
+
+    listEl.appendChild(li);
+
+    rowDiv.querySelector('input').addEventListener('change', function() {
+      const idx = parseInt(this.dataset.idx);
+      state.toggles[pillar.id][idx] = this.checked;
+      rowDiv.classList.toggle('is-on', this.checked);
+      const tipBox = document.getElementById('tip-' + pillar.id + '-' + idx);
+      if (tipBox) tipBox.classList.toggle('is-visible', !this.checked);
+      render();
+    });
+  });
+
+  document.getElementById('detail-panel').classList.add('is-open');
+  requestAnimationFrame(() => {
+    document.getElementById('detail-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+  render();
+}
+
+function closePanel() {
+  document.getElementById('detail-panel').classList.remove('is-open');
+  document.querySelectorAll('.pillar-card').forEach(c => {
+    c.classList.remove('is-active');
+    c.setAttribute('aria-expanded', 'false');
+  });
+  document.querySelectorAll('.connector-line').forEach(l => l.classList.remove('is-active'));
+  state.activePillar = null;
+}
+
+// ──────────────────────────────────────────────
+// GUIDED FLOW
+// ──────────────────────────────────────────────
+function startGuided() {
+  state.guidedMode = true;
+  state.guidedStep = 0;
+  document.getElementById('start-btn').classList.add('is-hidden');
+  document.getElementById('guided-nav').classList.add('is-active');
+  activatePillarByStep(0);
+  renderGuidedNav();
+}
+
+function renderGuidedNav() {
+  const pillar = PILLARS[state.guidedStep];
+  const isLast = state.guidedStep === PILLARS.length - 1;
+
+  document.getElementById('guided-step-text').textContent =
+    'Step ' + (state.guidedStep + 1) + ' of ' + PILLARS.length + ' — ' + pillar.label;
+  document.getElementById('guided-sub-text').textContent = pillar.description;
+
+  const dotsEl = document.getElementById('guided-dots');
+  dotsEl.innerHTML = '';
+  PILLARS.forEach((p, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'guided-nav__dot' +
+      (i < state.guidedStep ? ' is-done' : i === state.guidedStep ? ' is-active' : '');
+    dotsEl.appendChild(dot);
+  });
+
+  document.getElementById('guided-back').disabled = state.guidedStep === 0;
+
+  const nextBtn = document.getElementById('guided-next');
+  if (isLast) {
+    nextBtn.textContent = 'See Action Plan →';
+  } else {
+    nextBtn.textContent = 'Next: ' + PILLARS[state.guidedStep + 1].label + ' →';
+  }
+}
+
+function activatePillarByStep(step) {
+  const pillar = PILLARS[step];
+  document.querySelectorAll('.pillar-card').forEach(c => {
+    c.classList.remove('is-active'); c.setAttribute('aria-expanded', 'false');
+  });
+  document.querySelectorAll('.connector-line').forEach(l => l.classList.remove('is-active'));
+  const card = document.querySelector('[data-pillar="' + pillar.id + '"]');
+  if (card) { card.classList.add('is-active'); card.setAttribute('aria-expanded', 'true'); }
+  const line = document.getElementById('line-' + pillar.id);
+  if (line) line.classList.add('is-active');
+  openPanel(pillar);
+}
+
+document.getElementById('guided-back').addEventListener('click', () => {
+  if (state.guidedStep > 0) {
+    state.guidedStep--;
+    activatePillarByStep(state.guidedStep);
+    renderGuidedNav();
+  }
+});
+
+document.getElementById('guided-next').addEventListener('click', () => {
+  if (state.guidedStep < PILLARS.length - 1) {
+    state.guidedStep++;
+    activatePillarByStep(state.guidedStep);
+    renderGuidedNav();
+  } else {
+    openSummary();
+  }
+});
+
+document.getElementById('start-btn').addEventListener('click', startGuided);
+
+// ──────────────────────────────────────────────
+// ACTION PLAN SUMMARY
+// ──────────────────────────────────────────────
+function openSummary() {
+  state.summaryOpen = true;
+  closePanel();
+  document.getElementById('summary-section').classList.add('is-open');
+  renderSummaryContent();
+  requestAnimationFrame(() => {
+    document.getElementById('summary-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+}
+
+function closeSummary() {
+  state.summaryOpen = false;
+  document.getElementById('summary-section').classList.remove('is-open');
+}
+
+function renderSummaryContent() {
+  const rate      = calcRate();
+  const potential = calcPotential(rate);
+
+  const curEl = document.getElementById('summary-current-rate');
+  curEl.textContent = rate !== null ? rate.toFixed(1) + '%' : '—';
+  curEl.className   = 'summary-rate-value ' + rateColorClass(rate);
+  document.getElementById('summary-potential-rate').textContent =
+    potential !== null ? '~' + potential.toFixed(0) + '%' : '—';
+
+  const highItems = [], medItems = [];
+  PILLARS.forEach(p => {
+    const tips = getTips(p.id);
+    p.factors.forEach((f, i) => {
+      if (!state.toggles[p.id][i]) {
+        const item = { pillar: p, factor: f, tip: tips[i] || '' };
+        if (f.impact === 'high') highItems.push(item); else medItems.push(item);
+      }
+    });
+  });
+
+  const contentEl = document.getElementById('summary-content');
+  if (highItems.length === 0 && medItems.length === 0) {
+    contentEl.innerHTML = '<div class="summary-all-good">✓ All factors optimized — great work!</div>';
+    return;
+  }
+
+  let html = '';
+  function renderItems(items, cls, badgeLabel) {
+    return items.map(item => `
+      <div class="action-item action-item--${cls}">
+        <span class="action-item__icon">${item.pillar.icon}</span>
+        <div class="action-item__content">
+          <div class="action-item__name">${item.factor.name}</div>
+          ${item.tip ? `<div class="action-item__tip">${item.tip}</div>` : ''}
+        </div>
+        <span class="action-item__badge action-item__badge--${cls}">${badgeLabel}</span>
+      </div>
+    `).join('');
+  }
+
+  if (highItems.length > 0) {
+    html += `<div class="summary-section-title">🔴 High Impact Actions (${highItems.length})</div>`;
+    html += `<div class="action-items">${renderItems(highItems, 'high', 'High')}</div>`;
+  }
+  if (medItems.length > 0) {
+    html += `<div class="summary-section-title">🟡 Medium Impact Actions (${medItems.length})</div>`;
+    html += `<div class="action-items">${renderItems(medItems, 'medium', 'Medium')}</div>`;
+  }
+
+  contentEl.innerHTML = html;
+}
+
+function resetAssessment() {
+  Object.keys(state.toggles).forEach(k => {
+    state.toggles[k] = state.toggles[k].map(() => false);
+  });
+  state.guidedStep  = 0;
+  state.summaryOpen = false;
+  state.activePillar = null;
+  closeSummary();
+  closePanel();
+  if (state.guidedMode) {
+    document.getElementById('start-btn').classList.remove('is-hidden');
+    document.getElementById('guided-nav').classList.remove('is-active');
+    state.guidedMode = false;
+  }
+  render();
+}
+
+document.getElementById('summary-close').addEventListener('click', closeSummary);
+document.getElementById('summary-reset').addEventListener('click', resetAssessment);
+
+// ──────────────────────────────────────────────
+// PILLAR CARD CLICKS
+// ──────────────────────────────────────────────
+document.querySelectorAll('.pillar-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const id     = card.dataset.pillar;
+    const pillar = PILLARS.find(p => p.id === id);
+
+    if (state.activePillar && state.activePillar.id === id) { closePanel(); return; }
+
+    // Keep guided nav in sync if active
+    if (state.guidedMode) {
+      const idx = PILLARS.findIndex(p => p.id === id);
+      if (idx >= 0) { state.guidedStep = idx; renderGuidedNav(); }
+    }
+
+    document.querySelectorAll('.pillar-card').forEach(c => {
+      c.classList.remove('is-active'); c.setAttribute('aria-expanded', 'false');
+    });
+    document.querySelectorAll('.connector-line').forEach(l => l.classList.remove('is-active'));
+    card.classList.add('is-active');
+    card.setAttribute('aria-expanded', 'true');
+    document.getElementById('line-' + id).classList.add('is-active');
+    openPanel(pillar);
+  });
+});
+
+document.getElementById('panel-close').addEventListener('click', closePanel);
+
+// ──────────────────────────────────────────────
+// INPUT LISTENERS
+// ──────────────────────────────────────────────
+document.getElementById('input-channel').addEventListener('change', function() {
+  state.channel = this.value;
+  render();
+  if (state.activePillar) openPanel(state.activePillar); // refresh tips
+});
+
+document.getElementById('input-sample').addEventListener('input', function() {
+  state.sampleSize = parseFloat(this.value) || 0;
+  // Clamp responses if needed
+  if (state.sampleSize > 0 && state.responses > state.sampleSize) {
+    state.responses = state.sampleSize;
+    document.getElementById('input-responses').value = state.sampleSize;
+    document.getElementById('responses-warning').classList.add('is-visible');
+  } else {
+    document.getElementById('responses-warning').classList.remove('is-visible');
+  }
+  render();
+});
+
+document.getElementById('input-responses').addEventListener('input', function() {
+  const val = parseFloat(this.value) || 0;
+  if (state.sampleSize > 0 && val > state.sampleSize) {
+    this.value  = state.sampleSize;
+    state.responses = state.sampleSize;
+    document.getElementById('responses-warning').classList.add('is-visible');
+  } else {
+    state.responses = val;
+    document.getElementById('responses-warning').classList.remove('is-visible');
+  }
+  render();
+});
+
+// ──────────────────────────────────────────────
+// SVG CONNECTORS
+// ──────────────────────────────────────────────
+function drawConnectors() {
+  const svg    = document.getElementById('svg-connectors');
+  const layout = document.getElementById('hub-layout');
+  const hub    = document.getElementById('hub-center');
+  if (getComputedStyle(layout).display === 'flex') return;
+  const svgRect = svg.getBoundingClientRect();
+  const hubRect = hub.getBoundingClientRect();
+  const hubCX = hubRect.left + hubRect.width  / 2 - svgRect.left;
+  const hubCY = hubRect.top  + hubRect.height / 2 - svgRect.top;
+  PILLARS.forEach(p => {
+    const card = document.querySelector('[data-pillar="' + p.id + '"]');
+    const line = document.getElementById('line-' + p.id);
+    if (!card || !line) return;
+    const cardRect = card.getBoundingClientRect();
+    line.setAttribute('x1', cardRect.left + cardRect.width  / 2 - svgRect.left);
+    line.setAttribute('y1', cardRect.top  + cardRect.height / 2 - svgRect.top);
+    line.setAttribute('x2', hubCX);
+    line.setAttribute('y2', hubCY);
+  });
+}
+
+window.addEventListener('load', drawConnectors);
+window.addEventListener('resize', drawConnectors);
+if (window.ResizeObserver) {
+  new ResizeObserver(drawConnectors).observe(document.getElementById('hub-layout'));
+}
+
+// Initial render
+render();
+</script>
+</body>
+</html>
