@@ -741,7 +741,7 @@ const CHANNEL_TIPS = {
       "Target the person closest to the experience, not a downstream manager or proxy."
     ],
     time: [
-      "Send Tuesday through Thursday in the respondent's local timezone.",
+      "For relationship surveys, send Tuesday through Thursday in the respondent's local timezone. Transactional surveys should deploy within 24–48 hrs of the interaction regardless of day.",
       "Prioritize delivery between 9:00–11:00 AM local time.",
       "Send one reminder 3–5 days after the initial invite; reserve a second only for high-priority audiences to protect against fatigue.",
       "For transactional use cases, deploy within 24–48 hours of the interaction.",
@@ -773,7 +773,7 @@ const CHANNEL_TIPS = {
       "Target the individual who directly experienced the moment, not a shared or corporate number."
     ],
     time: [
-      "Send close to the interaction, ideally within 24 hours — timing the event matters more than day of week for SMS.",
+      "For SMS, day of week matters less than proximity to the interaction. Send within 24 hours of the event; for relationship surveys, avoid weekends and early mornings.",
       "Deliver during reasonable local daytime hours, typically mid-morning to early evening.",
       "Keep cadence tighter than email, but protect against fatigue with strict cross-channel frequency controls.",
       "Trigger immediately or within a few hours of the interaction — SMS response windows close faster than email.",
@@ -805,7 +805,7 @@ const CHANNEL_TIPS = {
       "Align targeting to the person actually performing the task, action, or journey step being measured."
     ],
     time: [
-      "For website intercepts, avoid firing too early — allow enough time for the user to engage with the page first.",
+      "For digital channels, day of week is less relevant than session context. For relationship surveys, avoid low-engagement periods (weekends, holidays); for transactional, trigger on the event regardless of day.",
       "Match display timing to when users actively complete tasks; avoid idle or transition states.",
       "Throttle exposure so users are not repeatedly interrupted across sessions.",
       "Trigger as close to the moment of truth as possible; for in-app, deploy immediately after task or milestone completion.",
@@ -852,7 +852,7 @@ const PILLARS = [
     id: 'time', label: 'Right Time', icon: '⏰', color: '#14B8A6',
     description: 'Are you sending at the right moment?',
     factors: [
-      { name: 'Day of week (Tue–Thu optimal)',              hint: 'Midweek sends typically outperform Monday/Friday',            impact: 'high',   lift: 8 },
+      { name: 'Day of week — relationship surveys (Tue–Thu)', hint: 'Applies to relationship surveys; transactional surveys should deploy within 24–48 hrs of the event regardless of day', impact: 'high',   lift: 8 },
       { name: 'Time of day (late morning)',                 hint: '9–11 AM local time typically yields highest open rates',      impact: 'high',   lift: 8 },
       { name: 'Survey recency / fatigue avoidance',         hint: 'Not surveying the same person too frequently',               impact: 'high',   lift: 8 },
       { name: 'Event proximity (24–48 hrs post-interaction)', hint: 'Transactional surveys sent while experience is fresh',     impact: 'high',   lift: 8 },
