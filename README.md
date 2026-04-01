@@ -1,36 +1,33 @@
 # Survey Response Rate Explorer
 
-An interactive visual tool for understanding and improving survey response rates across channels.
+Response rate isn't one problem. It's four.
 
-## What It Does
+This tool breaks down what's actually driving (or tanking) your survey response rate across four pillars: right people, right time, right messaging, right questions. Pick your channel, enter your numbers, and walk through what your program is doing well and what it isn't.
 
-This tool helps survey program teams diagnose what's driving (or limiting) their response rate by evaluating four key pillars:
+## What it does
 
-- **Right People** — Are you reaching the right respondents?
-- **Right Time** — Are you sending at the right moment?
-- **Right Messaging** — Does your outreach compel action?
-- **Right Questions** — Is the survey itself easy to complete?
+You get a live gauge that updates as you assess your program. Every factor you haven't optimized shows you exactly how to fix it, with guidance specific to your channel. At the end, it hands you a prioritized action list so you know where to focus first.
 
-## Features
+The four pillars:
 
-- **Channel-based benchmarks** — Select your delivery channel (Email, SMS, Digital – Website, Digital – In-App, Passive Feedback Button) to see realistic response rate benchmarks and color-coded performance thresholds
-- **Interactive factor toggles** — Check off each best practice your program currently follows; the hub gauge and pillar scores update in real time
-- **How-to-improve tips** — When a factor is unchecked, a channel-specific tip appears explaining how to implement it
-- **Optimized potential** — See how much lift is possible if all unchecked factors were addressed
-- **Guided Assessment** — Step through all four pillars in sequence with back/next navigation
-- **Action Plan Summary** — After completing the assessment, get a prioritized list of High and Medium impact actions with channel-specific guidance
+- **Right People** — Are you actually reaching the person who had the experience, or a proxy?
+- **Right Time** — Are you sending when it's convenient for you, or when it works for them?
+- **Right Messaging** — Does your invite give someone a reason to respond, or just ask for a favor?
+- **Right Questions** — Is the survey itself worth completing?
 
-## How to Use
+## How to use it
 
-1. Select your **channel** from the dropdown
-2. Enter your **sample size** and **responses received**
-3. Click **Start Guided Assessment** to walk through each pillar, or click any pillar card to jump directly
-4. Toggle each factor ON if your program currently follows that practice
-5. Click **See Action Plan** to view your prioritized recommendations
+1. Select your channel (Email, SMS, In-App, Website Intercept, or Passive Button)
+2. Enter your sample size and responses received
+3. Hit **Start Guided Assessment** to walk through each pillar, or click any card to jump in
+4. Toggle each factor on if your program already does it
+5. Click **See Action Plan** to get your prioritized list of what to fix and how
 
-## Benchmarks by Channel
+The benchmarks adjust by channel. A 12% response rate looks very different on email than it does on a passive feedback button.
 
-| Channel | Conservative Range | Strong Result |
+## Channel benchmarks
+
+| Channel | Conservative range | Strong result |
 |---|---|---|
 | Email | 5–15% | 15%+ |
 | SMS | 10–25% | 25%+ |
@@ -38,8 +35,12 @@ This tool helps survey program teams diagnose what's driving (or limiting) their
 | Digital – In-App Prompt | 8–20% | 20%+ |
 | Passive Feedback Button | <1% | 1%+ |
 
-> Benchmark ranges reflect published industry data. Actual results vary by program design, audience, and context.
+One consideration: these ranges reflect published industry data. Your actual baseline depends on your audience, program design, and how long you've been running it. Use the benchmarks as a directional check, not a grade.
 
-## Live Tool
+## Live tool
 
 [Open the Survey Response Rate Explorer](https://noah-zuniga.github.io/survey-response-explorer)
+
+---
+
+**TL;DR:** If you want to know why your response rate is where it is and what to do about it, start here.
